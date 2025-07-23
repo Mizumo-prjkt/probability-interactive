@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Probability Fundamentals</title>
+    <script src="/static/chart.js"></script>
+    <style src="/static/css2"></style>
+    <script src="/static/saved_resource"></script>
+    <!-- <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
+    <!-- <style src="/node_modules/tailwindcss/index.css"></style>
+    <script defer preload exportparts="Chart" src="/node_modules/chartjs/chart.js"></script> -->
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> -->
+    <!-- Chosen Palette: Calm Scholar -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive, scrollable learning module. Instead of a rigid, chapter-like structure, it's broken into five thematic, interactive sections: 'Basics', 'Discrete Distributions', 'Continuous Distributions', 'Applications', and 'Quick Quiz'. This structure was chosen to transform the static report into a hands-on experience. Users can either follow the logical flow from top to bottom or jump directly to a concept of interest using the top navigation. Each section contains interactive "calculators" or "visualizers" that allow users to manipulate variables (like probability, trials, or mean) and see the outcomes in real-time via charts and calculated results. The new 'Quick Quiz' section provides an interactive way to test understanding. This active learning approach is far more effective for grasping abstract mathematical concepts than simply reading about them. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Basic Probability Rules -> Goal: Inform/Interact -> Viz/Method: HTML/JS Calculators -> Interaction: User input triggers calculation -> Justification: Makes abstract formulas tangible.
+        - Report Info: Binomial Distribution -> Goal: Explore Change -> Viz/Method: Chart.js Bar Chart -> Interaction: Sliders for 'n' (trials) and 'p' (probability) update chart and calculations -> Justification: Visually demonstrates how parameters affect the distribution's shape.
+        - Report Info: Poisson Distribution -> Goal: Explore Change -> Viz/Method: Chart.js Bar Chart -> Interaction: Slider for 'λ' (average rate) updates chart -> Justification: Clearly shows how the average rate influences the likelihood of events.
+        - Report Info: Normal Distribution -> Goal: Explore Relationships -> Viz/Method: Chart.js Line Chart -> Interaction: Sliders for 'μ' (mean) and 'σ' (std dev) update curve; input for 'X' calculates Z-score -> Justification: Connects the visual shape of the curve to its statistical properties.
+        - Report Info: Central Limit Theorem -> Goal: Inform/Illustrate -> Viz/Method: Simplified Chart.js animation -> Interaction: Button click simulates sampling -> Justification: Provides a conceptual, visual proof of a complex theorem without overwhelming the user.
+        - Report Info: Applications -> Goal: Inform -> Viz/Method: Styled HTML cards with icons -> Interaction: None -> Justification: Presents conceptual information clearly and concisely without unnecessary complexity.
+        - Report Info: General Probability Concepts -> Goal: Test Understanding -> Viz/Method: HTML/JS Quiz Cards -> Interaction: Select answer, get feedback, next question -> Justification: Provides an engaging, self-assessment tool.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+            color: #3A3A3A;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4A90E2;
+            border-bottom-color: #4A90E2;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .interactive-section {
+            border: 1px solid #E5E7EB;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #D1D5DB;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .slider:hover {
+            opacity: 1;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .quiz-option-button {
+            background-color: #F3F4F6;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .quiz-option-button:hover {
+            background-color: #E5E7EB;
+            border-color: #9CA3AF;
+        }
+        .quiz-option-button.correct {
+            background-color: #D1FAE5;
+            border-color: #34D399;
+            color: #065F46;
+        }
+        .quiz-option-button.incorrect {
+            background-color: #FEE2E2;
+            border-color: #EF4444;
+            color: #991B1B;
+        }
+        .quiz-option-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Probability Explorer</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#basics" class="nav-link px-3 py-2 text-sm font-medium text-gray-600">Basics</a>
+                        <a href="#discrete" class="nav-link px-3 py-2 text-sm font-medium text-gray-600">Discrete</a>
+                        <a href="#continuous" class="nav-link px-3 py-2 text-sm font-medium text-gray-600">Continuous</a>
+                        <a href="#applications" class="nav-link px-3 py-2 text-sm font-medium text-gray-600">Applications</a>
+                        <a href="#quiz" class="nav-link px-3 py-2 text-sm font-medium text-gray-600">Quiz</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900">Fundamentals of Probability</h2>
+            <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">An interactive guide to understanding the core concepts of probability and its applications.</p>
+        </div>
+
+        <div id="basics" class="space-y-12 scroll-mt-20">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold text-gray-800">1. Understanding Probability: The Basics</h3>
+                <p class="mt-2 text-md text-gray-500">This section introduces the fundamental rules of probability. Interact with the calculators to see how we can determine the chances of different outcomes.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="card p-6">
+                    <h4 class="font-bold text-lg mb-2">"OR" Rule (Addition)</h4>
+                    <p class="text-sm text-gray-600 mb-4">Calculates the probability of one event OR another occurring. Based on rolling a standard 6-sided die.</p>
+                    <div class="interactive-section">
+                        <p class="text-sm mb-2">P(Roll a 2 or 4) = P(2) + P(4)</p>
+                        <p class="text-sm mb-4">1/6 + 1/6 = <span class="font-bold text-lg text-blue-600">0.333</span></p>
+                        <div class="flex justify-center space-x-2">
+                            <span class="text-4xl">🎲</span>
+                            <span class="text-4xl">⚁</span>
+                            <span class="text-4xl">⚃</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h4 class="font-bold text-lg mb-2">"AND" Rule (Multiplication)</h4>
+                    <p class="text-sm text-gray-600 mb-4">Calculates the probability of two independent events both occurring. Based on flipping a fair coin twice.</p>
+                    <div class="interactive-section">
+                        <p class="text-sm mb-2">P(Heads and Heads) = P(H) * P(H)</p>
+                        <p class="text-sm mb-4">0.5 * 0.5 = <span class="font-bold text-lg text-blue-600">0.25</span></p>
+                        <div class="flex justify-center space-x-2">
+                            <span class="text-4xl">🪙</span>
+                            <span class="text-4xl">→</span>
+                            <span class="text-4xl">🪙</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h4 class="font-bold text-lg mb-2">"NOT" Rule (Complement)</h4>
+                    <p class="text-sm text-gray-600 mb-4">Calculates the probability of an event NOT occurring. Based on a 30% chance of rain.</p>
+                    <div class="interactive-section">
+                        <p class="text-sm mb-2">P(Not Rain) = 1 - P(Rain)</p>
+                        <p class="text-sm mb-4">1 - 0.3 = <span class="font-bold text-lg text-blue-600">0.70</span></p>
+                        <div class="flex justify-center space-x-2">
+                             <span class="text-4xl">🌦️</span>
+                             <span class="text-4xl">→</span>
+                             <span class="text-4xl">☀️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-16 border-gray-200">
+
+        <div id="discrete" class="space-y-12 scroll-mt-20">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold text-gray-800">2. Common Probability Patterns (Discrete)</h3>
+                <p class="mt-2 text-md text-gray-500">Discrete distributions apply to things we can count. Use the sliders to see how changing parameters affects the probability of specific outcomes.</p>
+            </div>
+            <div class="card p-6 md:p-8">
+                <h4 class="font-bold text-xl mb-2">Binomial Distribution</h4>
+                <p class="text-sm text-gray-600 mb-6">Models the number of successes in a fixed number of independent trials. Think of flipping a coin multiple times.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div>
+                            <label for="binomial-n" class="block text-sm font-medium text-gray-700">Number of Trials (n): <span id="binomial-n-value" class="font-bold text-blue-600">10</span></label>
+                            <input id="binomial-n" type="range" min="1" max="50" value="10" class="slider">
+                        </div>
+                        <div>
+                            <label for="binomial-p" class="block text-sm font-medium text-gray-700">Probability of Success (p): <span id="binomial-p-value" class="font-bold text-blue-600">0.5</span></label>
+                            <input id="binomial-p" type="range" min="0.05" max="0.95" step="0.05" value="0.5" class="slider">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-md text-center">
+                            <p class="text-sm text-gray-600">Expected successes (n * p):</p>
+                            <p id="binomial-expected" class="text-2xl font-bold text-gray-800">5.0</p>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="chart-container">
+                            <canvas id="binomialChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-6 md:p-8">
+                <h4 class="font-bold text-xl mb-2">Poisson Distribution</h4>
+                <p class="text-sm text-gray-600 mb-6">Models the number of events occurring in a fixed interval of time or space. Think of calls arriving at a call center.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div>
+                            <label for="poisson-lambda" class="block text-sm font-medium text-gray-700">Average Rate (λ): <span id="poisson-lambda-value" class="font-bold text-blue-600">3</span></label>
+                            <input id="poisson-lambda" type="range" min="0.5" max="20" step="0.5" value="3" class="slider">
+                        </div>
+                         <div class="bg-gray-50 p-4 rounded-md text-center">
+                            <p class="text-sm text-gray-600">Most likely number of events:</p>
+                            <p id="poisson-expected" class="text-2xl font-bold text-gray-800">2 or 3</p>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="chart-container">
+                            <canvas id="poissonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-16 border-gray-200">
+
+        <div id="continuous" class="space-y-12 scroll-mt-20">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold text-gray-800">3. Common Probability Patterns (Continuous)</h3>
+                <p class="mt-2 text-md text-gray-500">Continuous distributions apply to things we can measure, like height or time. The Normal Distribution, or "Bell Curve," is the most famous.</p>
+            </div>
+            <div class="card p-6 md:p-8">
+                <h4 class="font-bold text-xl mb-2">Normal Distribution (Bell Curve)</h4>
+                <p class="text-sm text-gray-600 mb-6">Describes many natural phenomena. Adjust the mean (center) and standard deviation (spread) to see how the curve changes.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div>
+                            <label for="normal-mu" class="block text-sm font-medium text-gray-700">Mean (μ): <span id="normal-mu-value" class="font-bold text-blue-600">0</span></label>
+                            <input id="normal-mu" type="range" min="-10" max="10" value="0" step="1" class="slider">
+                        </div>
+                        <div>
+                            <label for="normal-sigma" class="block text-sm font-medium text-gray-700">Std. Deviation (σ): <span id="normal-sigma-value" class="font-bold text-blue-600">1</span></label>
+                            <input id="normal-sigma" type="range" min="0.5" max="5" step="0.1" value="1" class="slider">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-md">
+                            <label for="normal-x" class="block text-sm font-medium text-gray-700">Calculate Z-score for X:</label>
+                            <input type="number" id="normal-x" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <p class="mt-2 text-center text-sm text-gray-600">Z-score = <span id="normal-z-value" class="text-xl font-bold text-gray-800">1.00</span></p>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="chart-container">
+                            <canvas id="normalChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <div class="card p-6 md:p-8">
+                <h4 class="font-bold text-xl mb-2">Central Limit Theorem (CLT)</h4>
+                <p class="text-sm text-gray-600 mb-6">A powerful idea: the average of many samples from *any* distribution will tend to look like a Normal Distribution. Click the button to see it in action.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                    <div class="lg:col-span-1 space-y-4 text-center">
+                         <p class="text-sm text-gray-600">Start with a non-normal population (e.g., uniform).</p>
+                         <button id="clt-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Take 1000 Samples & Average</button>
+                         <p class="text-sm text-gray-600 mt-2">The distribution of the sample averages will approach a bell curve.</p>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="chart-container">
+                            <canvas id="cltChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-16 border-gray-200">
+
+        <div id="applications" class="space-y-12 scroll-mt-20">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold text-gray-800">4. Putting Probability to Work</h3>
+                <p class="mt-2 text-md text-gray-500">Probability isn't just theory. It's a practical tool used in business and engineering to make predictions and manage risk.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card p-8 flex flex-col items-center text-center">
+                    <div class="text-5xl mb-4">⚙️</div>
+                    <h4 class="font-bold text-xl mb-2">System Failure Modeling</h4>
+                    <p class="text-gray-600">By understanding the probability of a part failing over time, engineers can design more reliable systems and schedule maintenance before breakdowns occur, saving time and money.</p>
+                </div>
+                <div class="card p-8 flex flex-col items-center text-center">
+                    <div class="text-5xl mb-4">📈</div>
+                    <h4 class="font-bold text-xl mb-2">Demand Forecasting</h4>
+                    <p class="text-gray-600">Businesses use probability to forecast customer demand. This helps optimize inventory, ensuring they have enough stock to meet needs without overspending on products that won't sell.</p>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-16 border-gray-200">
+
+        <div id="quiz" class="space-y-12 scroll-mt-20">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold text-gray-800">5. Quick Quiz: Test Your Knowledge!</h3>
+                <p class="mt-2 text-md text-gray-500">Challenge yourself with some quick questions about probability fundamentals. Good luck!</p>
+            </div>
+            <div class="card p-6 md:p-8 max-w-2xl mx-auto">
+                <h4 id="quiz-question" class="font-bold text-xl mb-6 text-gray-800">Loading question...</h4>
+                <div id="quiz-options" class="grid grid-cols-1 gap-4 mb-6">
+                    <button class="quiz-option-button py-3 px-4 rounded-lg text-left"></button>
+                    <button class="quiz-option-button py-3 px-4 rounded-lg text-left"></button>
+                    <button class="quiz-option-button py-3 px-4 rounded-lg text-left"></button>
+                    <button class="quiz-option-button py-3 px-4 rounded-lg text-left"></button>
+                </div>
+                <div id="quiz-feedback" class="text-center text-lg font-semibold mb-4 min-h-[1.5rem]"></div>
+                <button id="next-question-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" disabled>Next Question</button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            <p>Interactive Probability Explorer | Built to make learning accessible.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const smoothScroll = (targetId) => {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            };
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    smoothScroll(this.getAttribute('href'));
+                });
+            });
+
+            const factorial = (n) => (n <= 1) ? 1 : n * factorial(n - 1);
+            const combinations = (n, k) => (k < 0 || k > n) ? 0 : factorial(n) / (factorial(k) * factorial(n - k));
+            const poissonProb = (lambda, k) => (Math.exp(-lambda) * Math.pow(lambda, k)) / factorial(k);
+
+            let binomialChart, poissonChart, normalChart, cltChart;
+
+            const setupBinomialChart = () => {
+                const nSlider = document.getElementById('binomial-n');
+                const pSlider = document.getElementById('binomial-p');
+                const nValue = document.getElementById('binomial-n-value');
+                const pValue = document.getElementById('binomial-p-value');
+                const expectedValue = document.getElementById('binomial-expected');
+                const ctx = document.getElementById('binomialChart').getContext('2d');
+
+                const updateChart = () => {
+                    const n = parseInt(nSlider.value);
+                    const p = parseFloat(pSlider.value);
+                    nValue.textContent = n;
+                    pValue.textContent = p.toFixed(2);
+                    expectedValue.textContent = (n * p).toFixed(1);
+
+                    const labels = Array.from({ length: n + 1 }, (_, i) => i);
+                    const data = labels.map(k => combinations(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k));
+
+                    if (binomialChart) {
+                        binomialChart.data.labels = labels;
+                        binomialChart.data.datasets[0].data = data;
+                        binomialChart.update();
+                    } else {
+                        binomialChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Probability',
+                                    data: data,
+                                    backgroundColor: 'rgba(74, 144, 226, 0.6)',
+                                    borderColor: 'rgba(74, 144, 226, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: { beginAtZero: true, title: { display: true, text: 'Probability' } },
+                                    x: { title: { display: true, text: 'Number of Successes (k)' } }
+                                },
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    }
+                };
+                nSlider.addEventListener('input', updateChart);
+                pSlider.addEventListener('input', updateChart);
+                updateChart();
+            };
+
+            const setupPoissonChart = () => {
+                const lambdaSlider = document.getElementById('poisson-lambda');
+                const lambdaValue = document.getElementById('poisson-lambda-value');
+                const expectedValue = document.getElementById('poisson-expected');
+                const ctx = document.getElementById('poissonChart').getContext('2d');
+
+                const updateChart = () => {
+                    const lambda = parseFloat(lambdaSlider.value);
+                    lambdaValue.textContent = lambda.toFixed(1);
+                    
+                    const maxK = Math.ceil(lambda + 4 * Math.sqrt(lambda));
+                    const labels = Array.from({ length: maxK + 1 }, (_, i) => i);
+                    const data = labels.map(k => poissonProb(lambda, k));
+                    
+                    const mode1 = Math.floor(lambda);
+                    const mode2 = Math.ceil(lambda) - 1;
+                    if (lambda === 0) {
+                        expectedValue.textContent = "0";
+                    } else if (lambda % 1 === 0) {
+                        expectedValue.textContent = `${mode2} or ${mode1}`;
+                    } else {
+                        expectedValue.textContent = `${mode1}`;
+                    }
+
+                    if (poissonChart) {
+                        poissonChart.data.labels = labels;
+                        poissonChart.data.datasets[0].data = data;
+                        poissonChart.update();
+                    } else {
+                        poissonChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Probability',
+                                    data: data,
+                                    backgroundColor: 'rgba(245, 166, 35, 0.6)',
+                                    borderColor: 'rgba(245, 166, 35, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: { beginAtZero: true, title: { display: true, text: 'Probability' } },
+                                    x: { title: { display: true, text: 'Number of Events (k)' } }
+                                },
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    }
+                };
+                lambdaSlider.addEventListener('input', updateChart);
+                updateChart();
+            };
+
+            const setupNormalChart = () => {
+                const muSlider = document.getElementById('normal-mu');
+                const sigmaSlider = document.getElementById('normal-sigma');
+                const xInput = document.getElementById('normal-x');
+                const muValue = document.getElementById('normal-mu-value');
+                const sigmaValue = document.getElementById('normal-sigma-value');
+                const zValue = document.getElementById('normal-z-value');
+                const ctx = document.getElementById('normalChart').getContext('2d');
+
+                const normalPDF = (x, mu, sigma) => {
+                    const sigma2 = Math.pow(sigma, 2);
+                    return (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-Math.pow(x - mu, 2) / (2 * sigma2));
+                };
+
+                const updateChart = () => {
+                    const mu = parseFloat(muSlider.value);
+                    const sigma = parseFloat(sigmaSlider.value);
+                    const xVal = parseFloat(xInput.value);
+
+                    muValue.textContent = mu.toFixed(1);
+                    sigmaValue.textContent = sigma.toFixed(1);
+                    const zScore = (xVal - mu) / sigma;
+                    zValue.textContent = zScore.toFixed(2);
+
+                    const range = 5 * sigma;
+                    const minX = mu - range;
+                    const maxX = mu + range;
+                    const step = (maxX - minX) / 100;
+
+                    const labels = [];
+                    const data = [];
+                    for (let x = minX; x <= maxX; x += step) {
+                        labels.push(x.toFixed(2));
+                        data.push(normalPDF(x, mu, sigma));
+                    }
+
+                    if (normalChart) {
+                        normalChart.data.labels = labels;
+                        normalChart.data.datasets[0].data = data;
+                        normalChart.options.plugins.annotation.annotations.point1.xValue = xVal;
+                        normalChart.update();
+                    } else {
+                        normalChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Probability Density',
+                                    data: data,
+                                    borderColor: 'rgba(74, 144, 226, 1)',
+                                    backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                    fill: true,
+                                    tension: 0.1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: { beginAtZero: true, title: { display: true, text: 'Density' } },
+                                    x: { title: { display: true, text: 'Value' } }
+                                },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: { enabled: false },
+                                }
+                            }
+                        });
+                    }
+                };
+
+                muSlider.addEventListener('input', updateChart);
+                sigmaSlider.addEventListener('input', updateChart);
+                xInput.addEventListener('input', updateChart);
+                updateChart();
+            };
+            
+            const setupCltChart = () => {
+                const button = document.getElementById('clt-button');
+                const ctx = document.getElementById('cltChart').getContext('2d');
+                
+                const generatePopulation = (size = 10000) => {
+                    return Array.from({length: size}, () => Math.random());
+                };
+                
+                const population = generatePopulation();
+
+                const drawChart = (data, label) => {
+                    const bins = 20;
+                    const min = Math.min(...data);
+                    const max = Math.max(...data);
+                    const binWidth = (max - min) / bins;
+                    const histogram = new Array(bins).fill(0);
+                    
+                    data.forEach(val => {
+                        const binIndex = Math.floor((val - min) / binWidth);
+                        histogram[Math.min(binIndex, bins - 1)]++;
+                    });
+                    
+                    const labels = Array.from({length: bins}, (_, i) => (min + i * binWidth).toFixed(2));
+
+                    if (cltChart) {
+                        cltChart.data.labels = labels;
+                        cltChart.data.datasets[0].data = histogram;
+                        cltChart.data.datasets[0].label = label;
+                        cltChart.update();
+                    } else {
+                         cltChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: label,
+                                    data: histogram,
+                                    backgroundColor: 'rgba(74, 144, 226, 0.6)',
+                                    borderColor: 'rgba(74, 144, 226, 1)',
+                                    barPercentage: 1.0,
+                                    categoryPercentage: 1.0,
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+                                    x: { title: { display: true, text: 'Value' } }
+                                },
+                                plugins: { legend: { display: true } }
+                            }
+                        });
+                    }
+                };
+                
+                button.addEventListener('click', () => {
+                    const sampleSize = 30;
+                    const numSamples = 1000;
+                    const sampleMeans = [];
+                    
+                    for(let i = 0; i < numSamples; i++) {
+                        let sampleSum = 0;
+                        for(let j = 0; j < sampleSize; j++) {
+                            sampleSum += population[Math.floor(Math.random() * population.length)];
+                        }
+                        sampleMeans.push(sampleSum / sampleSize);
+                    }
+                    drawChart(sampleMeans, 'Distribution of Sample Means');
+                });
+                
+                drawChart(population.slice(0, 1000), 'Original Population Distribution');
+            };
+
+            const quizQuestions = [
+                {
+                    question: "What is the probability of rolling an odd number on a standard six-sided die?",
+                    options: ["1/6", "1/3", "1/2", "2/3"],
+                    answer: "1/2"
+                },
+                {
+                    question: "If two events are independent, what does it mean?",
+                    options: [
+                        "They cannot happen at the same time.",
+                        "The occurrence of one does not affect the probability of the other.",
+                        "They always happen together.",
+                        "Their probabilities add up to 1."
+                    ],
+                    answer: "The occurrence of one does not affect the probability of the other."
+                },
+                {
+                    question: "Which distribution is used for counting the number of successes in a fixed number of trials?",
+                    options: ["Poisson Distribution", "Normal Distribution", "Binomial Distribution", "Uniform Distribution"],
+                    answer: "Binomial Distribution"
+                },
+                {
+                    question: "The 'Bell Curve' is another name for which distribution?",
+                    options: ["Poisson Distribution", "Normal Distribution", "Binomial Distribution", "Exponential Distribution"],
+                    answer: "Normal Distribution"
+                },
+                {
+                    question: "What does the Central Limit Theorem state about sample means?",
+                    options: [
+                        "They always follow a uniform distribution.",
+                        "They tend to follow a normal distribution as sample size increases.",
+                        "They are always equal to the population mean.",
+                        "They are always independent of each other."
+                    ],
+                    answer: "They tend to follow a normal distribution as sample size increases."
+                },
+                {
+                    question: "If the probability of an event is 0.2, what is the probability of its complement?",
+                    options: ["0.2", "0.5", "0.8", "1.0"],
+                    answer: "0.8"
+                },
+                {
+                    question: "Which distribution is suitable for modeling the number of calls received by a call center in an hour?",
+                    options: ["Binomial", "Normal", "Poisson", "Uniform"],
+                    answer: "Poisson"
+                }
+            ];
+
+            let currentQuestionIndex = -1;
+            let shuffledQuestions = [];
+
+            const quizQuestionEl = document.getElementById('quiz-question');
+            const quizOptionsEl = document.getElementById('quiz-options');
+            const quizFeedbackEl = document.getElementById('quiz-feedback');
+            const nextQuestionButton = document.getElementById('next-question-button');
+
+            const shuffleArray = (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            };
+
+            const loadQuestion = () => {
+                quizFeedbackEl.textContent = '';
+                nextQuestionButton.disabled = true;
+                
+                if (currentQuestionIndex === -1 || currentQuestionIndex >= shuffledQuestions.length) {
+                    shuffledQuestions = shuffleArray([...quizQuestions]);
+                    currentQuestionIndex = 0;
+                }
+
+                const questionData = shuffledQuestions[currentQuestionIndex];
+                quizQuestionEl.textContent = questionData.question;
+                quizOptionsEl.innerHTML = '';
+
+                questionData.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.className = 'quiz-option-button py-3 px-4 rounded-lg text-left w-full';
+                    button.addEventListener('click', () => checkAnswer(button, option, questionData.answer));
+                    quizOptionsEl.appendChild(button);
+                });
+            };
+
+            const checkAnswer = (selectedButton, selectedOption, correctAnswer) => {
+                Array.from(quizOptionsEl.children).forEach(button => {
+                    button.disabled = true;
+                    if (button.textContent === correctAnswer) {
+                        button.classList.add('correct');
+                    } else {
+                        button.classList.add('incorrect');
+                    }
+                });
+
+                if (selectedOption === correctAnswer) {
+                    quizFeedbackEl.textContent = 'Correct! 🎉';
+                    quizFeedbackEl.classList.remove('text-red-600');
+                    quizFeedbackEl.classList.add('text-green-600');
+                } else {
+                    quizFeedbackEl.textContent = 'Incorrect. Try again next time!';
+                    quizFeedbackEl.classList.remove('text-green-600');
+                    quizFeedbackEl.classList.add('text-red-600');
+                }
+                nextQuestionButton.disabled = false;
+            };
+
+            nextQuestionButton.addEventListener('click', () => {
+                currentQuestionIndex++;
+                loadQuestion();
+            });
+
+            setupBinomialChart();
+            setupPoissonChart();
+            setupNormalChart();
+            setupCltChart();
+            loadQuestion(); // Load the first quiz question
+        });
+    </script>
+</body>
+</html>
