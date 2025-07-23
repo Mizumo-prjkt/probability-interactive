@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
     <style src="/node_modules/tailwindcss/index.css"></style>
     <script defer preload exportparts="Chart" src="/node_modules/chartjs/chart.js"></script> 
-   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm Scholar -->
     <!-- Application Structure Plan: The SPA is designed as an interactive, scrollable learning module. Instead of a rigid, chapter-like structure, it's broken into five thematic, interactive sections: 'Basics', 'Discrete Distributions', 'Continuous Distributions', 'Applications', and 'Quick Quiz'. This structure was chosen to transform the static report into a hands-on experience. Users can either follow the logical flow from top to bottom or jump directly to a concept of interest using the top navigation. Each section contains interactive "calculators" or "visualizers" that allow users to manipulate variables (like probability, trials, or mean) and see the outcomes in real-time via charts and calculated results. The new 'Quick Quiz' section provides an interactive way to test understanding. This active learning approach is far more effective for grasping abstract mathematical concepts than simply reading about them. -->
     <!-- Visualization & Content Choices: 
@@ -26,7 +26,7 @@
         - Report Info: General Probability Concepts -> Goal: Test Understanding -> Viz/Method: HTML/JS Quiz Cards -> Interaction: Select answer, get feedback, next question -> Justification: Provides an engaging, self-assessment tool.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-    <style>
+     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #FDFBF7;
@@ -146,7 +146,7 @@
     </header>
 
     <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        
+
         <div class="text-center mb-12">
             <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900">Fundamentals of Probability</h2>
             <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">An interactive guide to understanding the core concepts of probability and its applications.</p>
@@ -442,11 +442,11 @@
                 const updateChart = () => {
                     const lambda = parseFloat(lambdaSlider.value);
                     lambdaValue.textContent = lambda.toFixed(1);
-                    
+
                     const maxK = Math.ceil(lambda + 4 * Math.sqrt(lambda));
                     const labels = Array.from({ length: maxK + 1 }, (_, i) => i);
                     const data = labels.map(k => poissonProb(lambda, k));
-                    
+
                     const mode1 = Math.floor(lambda);
                     const mode2 = Math.ceil(lambda) - 1;
                     if (lambda === 0) {
@@ -529,7 +529,7 @@
                     if (normalChart) {
                         normalChart.data.labels = labels;
                         normalChart.data.datasets[0].data = data;
-                        normalChart.options.plugins.annotation.annotations.point1.xValue = xVal;
+                        // Removed the problematic annotation line
                         normalChart.update();
                     } else {
                         normalChart = new Chart(ctx, {
@@ -568,15 +568,15 @@
                 xInput.addEventListener('input', updateChart);
                 updateChart();
             };
-            
+
             const setupCltChart = () => {
                 const button = document.getElementById('clt-button');
                 const ctx = document.getElementById('cltChart').getContext('2d');
-                
+
                 const generatePopulation = (size = 10000) => {
                     return Array.from({length: size}, () => Math.random());
                 };
-                
+
                 const population = generatePopulation();
 
                 const drawChart = (data, label) => {
@@ -585,12 +585,12 @@
                     const max = Math.max(...data);
                     const binWidth = (max - min) / bins;
                     const histogram = new Array(bins).fill(0);
-                    
+
                     data.forEach(val => {
                         const binIndex = Math.floor((val - min) / binWidth);
                         histogram[Math.min(binIndex, bins - 1)]++;
                     });
-                    
+
                     const labels = Array.from({length: bins}, (_, i) => (min + i * binWidth).toFixed(2));
 
                     if (cltChart) {
@@ -624,12 +624,12 @@
                         });
                     }
                 };
-                
+
                 button.addEventListener('click', () => {
                     const sampleSize = 30;
                     const numSamples = 1000;
                     const sampleMeans = [];
-                    
+
                     for(let i = 0; i < numSamples; i++) {
                         let sampleSum = 0;
                         for(let j = 0; j < sampleSize; j++) {
@@ -639,7 +639,7 @@
                     }
                     drawChart(sampleMeans, 'Distribution of Sample Means');
                 });
-                
+
                 drawChart(population.slice(0, 1000), 'Original Population Distribution');
             };
 
@@ -710,7 +710,7 @@
             const loadQuestion = () => {
                 quizFeedbackEl.textContent = '';
                 nextQuestionButton.disabled = true;
-                
+
                 if (currentQuestionIndex === -1 || currentQuestionIndex >= shuffledQuestions.length) {
                     shuffledQuestions = shuffleArray([...quizQuestions]);
                     currentQuestionIndex = 0;
